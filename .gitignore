@@ -1,0 +1,17 @@
+# Python poop
+*.pyc
+*.wsgi
+
+# DB dregs
+*.db
+
+# editor excess
+*~
+*.swp
+*.swo
+*.swn
+*.swm
+*\#
+
+# dotfile debris
+.*
