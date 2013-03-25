@@ -8,28 +8,40 @@ class TripleTown(object):
         1: 4193,
         2: 1070,
         51: 1044,
-        'bot': 176,
-        'crystal': 168,
-        'tree': 136,
-        'ninja': 99,
-        'hut': 44,
+        53: 176,
+        0: 168,  # 0 is a crystal, turns into rock if not grouped
+        3: 136,
+        52: 99,
+        4: 44,
     }
 
     item_scores = {
-        'grass': 5,
-        'bush': 20,
-        'tree': 100,
-        'hut': 500,
-        'house': 1500,
-        'mansion': 5000,
-        'castle': 20000,
-        'float': 100000,
-        'church': 1000,
-        'cathedral': 5000,
-        'treasure': 10000,
-        'gravestone': 0,
-        'bear': 0,
-        'ninja': 0,
+        0: 0,
+        1: 5,
+        2: 20,
+        3: 100,
+        4: 500,
+        5: 1500,
+        6: 5000,
+        7: 20000,
+        8: 100000,
+        9: 1000,
+        10: 5000,
+        11: 0,
+        12: 5,
+        13: 40,
+        14: 200,
+        15: 1000,
+        16: 3000,
+        17: 10000,
+        18: 40000,
+        19: 200000,
+        20: 2000,
+        21: 10000,
+        40: 10000,
+        50: 0,
+        51: 0,
+        53: 0,
     }
 
     item_num_names = {
@@ -56,10 +68,11 @@ class TripleTown(object):
         19: 'floating castle+',
         20: 'church+',
         21: 'cathedral+',
+        40: 'treasure',
         50: 'gravestone',
         51: 'bear',
         52: 'ninja',
-        53, 'bot',
+        53: 'bot',
     }
 
     item_num_display = {
@@ -91,18 +104,21 @@ class TripleTown(object):
         52: 'N',
     }
 
-    def weighted_random(self, dict):
+    def weighted_random(self, item_dict):
         '''
         Takes a dict of item: weight pairs.
         Returns a random item taking into account the weight given.
         '''
         total_weight = 0
-        for k, v in dict.iteritems():
+        for k, v in item_dict.iteritems():
             total_weight += v
 
         choice = random.randrange(0, total_weight - 1)
 
-        for k, v in sorted(dict.iteritems(), key=lambda (k, v): (v, k), reverse=True):
+        for k, v in sorted(
+                item_dict.iteritems(),
+                key=lambda (k, v): (v, k),
+                reverse=True):
             if choice <= v:
                 return k
             else:
@@ -118,10 +134,12 @@ class TripleTown(object):
 
     def start_game(self):
         '''
-        Creates a new current_board, fills it with 3-12 items, then sets current_item.
+        Creates a new current_board, fills it with 3-12 items, sets
+        score=0 and current_item to something random.
 
-        Returns the board, but that can be ignored.
+        Returns the board, just because it can.
         '''
+        self.score = 0
         self.current_board = self.make_2d_board(6, 6)
 
         for i in xrange(random.randrange(3, 12)):
@@ -147,9 +165,10 @@ class TripleTown(object):
 
     def place(self, x, y, item):
         '''
-        Puts an item at a place. No checks.
+        Puts an item at a place. Overwrites with impunity.
         '''
         self.current_board[x][y] = item
+        return True
 
     def play(self, x, y):
         '''
@@ -159,32 +178,41 @@ class TripleTown(object):
 
         This has the side effect of updating the board according to the rules.
         '''
-        x -= 1
-        y -= 1
         if x == 0 and y == 0:
             if self.current_board[0][0] is None:
-                self.current_board[0][0] = self.current_item
+                self.place(0, 0, self.current_item)
+                self.current_item = self.weighted_random(self.item_weights)
             else:
                 temp = self.current_item
                 self.current_item = self.current_board[0][0]
-                self.current_board[0][0] = temp
+                self.place(0, 0, temp)
             return True
 
         elif self.current_item == 53:  # Bot
             target = self.current_board[x][y]
             if target == 51 or target == 52:  # Bear
-                self.current_board[x][y] = 50  # Kilt
+                self.place(x, y, 50)  # Kilt
                 self.update_board(x, y)
-            elif target = None:
+            elif target is None:
                 return False
             else:
                 self.current_board[x][y] = None
                 return True
 
+            self.current_item = self.weighted_random(self.item_weights)
+
+        elif self.current_item == 0:  # Crystal
+            # How should I do wildcard matches?
+            # Maybe for each in adjacent, check for groups, then call
+            # play() with the type that has the highest number/type
+            # TODO
+            return False
+
         elif self.current_board[x][y] is None:
-            self.current_board[x][y] = self.current_item
+            self.place(x, y, self.current_item)
+            self.score += self.item_scores[self.current_item]
             self.update_board(x, y)
-            return True
+            self.current_item = self.weighted_random(self.item_weights)
 
         else:
             return False
@@ -193,33 +221,65 @@ class TripleTown(object):
         '''
         Updates the board, given the coords of the placed item.
         '''
-        group = self.find_group(x, y)
+        loop = False
+        # For some reason, I have to pass an empty set to find_group. Why?
+        # Is group not being reinitialized?
+        # No, it's not. set() is evaluated at compile time and never again.
+        # Price of being in a function definition?
+        group = self.find_group(x, y, set([]))
+        type = self.current_board[x][y]
 
-        if len(group) == 3:
+        if len(group) >= 3:
             # Do stuff
-            print(group)
-            pass
-        if len(group) > 3:
-            # Do better stuff
-            print(group)
-            pass
+            for node in group:
+                self.current_board[node[0]][node[1]] = None
+            if type is None:
+                raise Exception("update_board() called on empty cell ({}, {}).".format(x, y))
+            elif type == 0:  # Rocks become mountains
+                self.place(x, y, 11)
+            elif 0 < type < 8 or type == 10:  # Normal upgrades
+                if len(group) == 3:
+                    offset = 1  # Used to compute which upgrade to give
+                else:
+                    offset = 11
+                new_type = type % 11 + offset
+                self.place(x, y, new_type)
+                self.score += self.item_scores[new_type]
+                loop = True
+            else:
+                self.status()
+                raise Exception("Unsure what to do. Group {} originating at ({}, {}) is type {}.".format(group, x, y, type))
+
+        self.move_bears()
+
+        if loop:
+            self.update_board(x, y)
 
         return group
 
+    def move_bears(self):
+        pass
+
     def find_group(self, x, y, group=set([])):
         '''
-        Given coordinates, returns a list of coordinates of connected items matching that type.
+        Given coordinates, returns a list of coordinates of connected
+        items matching that type.
         '''
         check_type = self.current_board[x][y]
+        if check_type is None:
+            return False
         group.add((x, y))
 
         for neighbor in self.adjacent_nodes(x, y):
             node_x = neighbor[0]
             node_y = neighbor[1]
             node_type = self.current_board[neighbor[0]][neighbor[1]]
-            if node_type == check_type and neighbor not in group:
+            # This is big and ugly. Can I improve it?
+            # Currently have to check that I've not checked before,
+            # that the space isn't empty, and that it's of appropriate type.
+            if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type < 40:
                 neighbor_group = self.find_group(node_x, node_y, group)
-                group.add(neighbor_group)
+                group.union(neighbor_group)
 
         return group
 
@@ -240,7 +300,7 @@ class TripleTown(object):
         if y < 5:
             adj.append((x, y + 1))
 
-        # 0,0 is the holding area. It has its own special rules.
+        # 0,0 is the storage area. It has its own special rules.
         # As such, it doesn't count as adjacent to anything.
         if (0, 0) in adj:
             adj.remove((0, 0))
@@ -254,11 +314,54 @@ class TripleTown(object):
         for row in self.current_board:
             print " ".join(map(self.item_num_to_display, row))
 
-    def item_num_to_name(self, item_type):
+    def status(self):
         '''
-        Given the item number, returns its name.
+        Prints the game status.
         '''
-        return self.item_num_names[item_type]
+        self.show_current_board()
+        print ""
+        print "Current item: {}".format(self.item_num_names[self.current_item])
+        print "Score: {}".format(self.score)
+
+    def game_running(self):
+        '''
+        Returns True if there's a blank spot on the board, otherwise False.
+        '''
+
+        # Protect storage, but keep from triggering false positive
+        temp = self.current_board[0][0]
+        self.current_board[0][0] = 1
+
+        for x in xrange(6):
+            if None in self.current_board[x]:
+                self.current_board[0][0] = temp
+                return True
+
+        self.current_board[0][0] = temp
+        return False
+
+    def run(self):
+        '''
+        Loops on input from user, plays game.
+        '''
+        self.start_game()
+        while self.game_running():
+            self.status()
+            print ""
+            try:
+                play = raw_input("> ")
+            except EOFError:
+                break
+            if play[0].lower() == "q":  # Allow user to quit
+                break
+
+            coords = play.split(",")
+
+            # Adjust for 0-indexed arrays and x/y reversal
+            t = int(coords[0]) - 1
+            coords[0] = int(coords[1]) - 1
+            coords[1] = t
+            self.play(coords[0], coords[1])
 
     def item_num_to_display(self, item_type):
         '''
