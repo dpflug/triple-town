@@ -117,6 +117,11 @@ class TripleTown(object):
         return [[None for i in xrange(x)] for j in range(y)]
 
     def start_game(self):
+        '''
+        Creates a new current_board, fills it with 3-12 items, then sets current_item.
+
+        Returns the board, but that can be ignored.
+        '''
         self.current_board = self.make_2d_board(6, 6)
 
         for i in xrange(random.randrange(3, 12)):
@@ -134,13 +139,26 @@ class TripleTown(object):
         return self.current_board
 
     def clear_board(self):
+        '''
+        Empties the current board
+        '''
         self.current_board = self.make_2d_board
         return True
 
     def place(self, x, y, item):
+        '''
+        Puts an item at a place. No checks.
+        '''
         self.current_board[x][y] = item
 
     def play(self, x, y):
+        '''
+        Plays an item at a place.
+
+        Returns True if the move is made successfully, False if not.
+
+        This has the side effect of updating the board according to the rules.
+        '''
         x -= 1
         y -= 1
         if x == 0 and y == 0:
@@ -172,6 +190,9 @@ class TripleTown(object):
             return False
 
     def update_board(self, x, y):
+        '''
+        Updates the board, given the coords of the placed item.
+        '''
         group = self.find_group(x, y)
 
         if len(group) == 3:
@@ -185,7 +206,10 @@ class TripleTown(object):
 
         return group
 
-    def find_group(self, x, y, group=set([]), bears=set([])):
+    def find_group(self, x, y, group=set([])):
+        '''
+        Given coordinates, returns a list of coordinates of connected items matching that type.
+        '''
         check_type = self.current_board[x][y]
         group.add((x, y))
 
@@ -196,15 +220,15 @@ class TripleTown(object):
             if node_type == check_type and neighbor not in group:
                 neighbor_group = self.find_group(node_x, node_y, group)
                 group.add(neighbor_group)
-            if node_type == 51:  # We found a bear!
-                bears.add((node_x, node_y))
 
-        if len(bears) > 0:
-            return group, bears
-        else:
-            return group
+        return group
 
     def adjacent_nodes(self, x, y):
+        '''
+        Given x and y, returns a list of coordinates adjacent to it,
+        handling literal edge cases and the fact that 0,0 is a storage area
+        rather than play area.
+        '''
         adj = []
 
         if x > 0:
@@ -224,11 +248,20 @@ class TripleTown(object):
         return adj
 
     def show_current_board(self):
+        '''
+        Pretty prints the board
+        '''
         for row in self.current_board:
             print " ".join(map(self.item_num_to_display, row))
 
     def item_num_to_name(self, item_type):
+        '''
+        Given the item number, returns its name.
+        '''
         return self.item_num_names[item_type]
 
     def item_num_to_display(self, item_type):
+        '''
+        Given the item number, returns an ASCII representation of it.
+        '''
         return self.item_num_display[item_type]
