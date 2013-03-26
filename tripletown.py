@@ -4,6 +4,16 @@ import random
 
 
 class TripleTown(object):
+    '''
+    Ok, I've tried to make this fairly straightforward.
+
+    The one caveat is that x and y are currently reversed.
+    Until I feel I fully understand the repercussions of changing that,
+    I'm going to work around it.
+
+    To be more specific, calling print() on the board will give
+    you its inverse.
+    '''
     item_weights = {
         1: 4193,
         2: 1070,
@@ -44,6 +54,12 @@ class TripleTown(object):
         52: 0,
         53: 0,
     }
+
+    # Removal penalty
+    # Grass: -10
+    # bush: -40
+    # bush+: -80
+    # Church: -1500 (maybe church+?)
 
     item_num_names = {
         None: 'blank',
@@ -203,6 +219,7 @@ class TripleTown(object):
             if target == 51 or target == 52:
                 self.place(x, y, 50)  # Kilt
                 self.update_board(x, y)
+                self.current_item = self.weighted_random(self.item_weights)
             # I don't know if the actual game lets you waste bots, but
             # I'm not gonna.
             elif target is None:
@@ -211,9 +228,8 @@ class TripleTown(object):
             # but I don't know how many yet.
             else:
                 self.current_board[x][y] = None
+                self.current_item = self.weighted_random(self.item_weights)
                 return True
-
-            self.current_item = self.weighted_random(self.item_weights)
 
         elif self.current_item == 0:  # Crystal
             n_dict = {}
@@ -287,10 +303,10 @@ class TripleTown(object):
                 self.status()
                 raise Exception("Unsure what to do. Group {} originating at ({}, {}) is type {}.".format(group, x, y, type))
 
-        self.update_bears()
-
         if loop:
             self.update_board(x, y)
+        else:
+            self.update_bears()
 
         return group
 
@@ -301,11 +317,65 @@ class TripleTown(object):
         Starting in the upper left corner (skipping the storage area),
         you iterate over diagonals (/) until you reach a bear.
 
-        Move each bear as you come to it.
+        I'm building a list of bears and ninja bears and moving them
+        after the loop.
 
         Probably a good idea to check for death as we do this.
         '''
-        pass
+        bears = []
+        ninja_bears = []
+
+        for x in xrange(1, 6):
+            y = 0
+            while x >= 0:
+                if self.current_board[x][y] == 51:
+                    bears.append((x, y))
+                elif self.current_board[x][y] == 52:
+                    ninja_bears.append((x, y))
+                y += 1
+                x -= 1
+
+        for y in xrange(1, 6):
+            x = 5
+            while y <= 5:
+                if self.current_board[x][y] == 51:
+                    bears.append((x, y))
+                elif self.current_board[x][y] == 52:
+                    ninja_bears.append((x, y))
+                y += 1
+                x -= 1
+
+        empty_nodes = self.get_empty_nodes()
+
+        for ninja in ninja_bears:
+            x, y = random.choice(empty_nodes)
+            # In case 2 ninjas choose the same destination
+            until self.current_board[x][y] is None:
+                x, y = random.choice(empty_nodes)
+
+            self.place(ninja[0], ninja[1], 0)
+            self.place(x, y, 52)
+
+        for bear in bears:
+            adj_blanks = [n for n in self.adjacent_nodes(bear[0], bear[1]) if self.current_board[n[0]][n[1]] is None]
+            print adj_blanks
+            destination = random.choice(adj_blanks)
+            self.place(bear[0], bear[1], None)
+            self.place(destination[0], destination[1], 51)
+
+    def get_empty_nodes():
+        '''
+        Returns coordinates of all the empty nodes on the board as
+        a set of tuples.
+        '''
+        empty_nodes = set([])
+
+        for x in range(6):
+            for y in range(6):
+                if self.current_board[x][y] is None:
+                    empty_nodes.add((x, y))
+
+        return empty_nodes
 
     def find_group(self, x, y, group=set([])):
         '''
