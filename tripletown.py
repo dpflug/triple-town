@@ -41,12 +41,15 @@ class TripleTown(object):
         40: 10000,
         50: 0,
         51: 0,
+        52: 0,
         53: 0,
     }
 
     item_num_names = {
         None: 'blank',
-        0: 'rock',
+        # When we're getting the name, it's for the current item,
+        # so this would be a crystal.
+        0: 'crystal',
         1: 'grass',
         2: 'bush',
         3: 'tree',
@@ -124,7 +127,7 @@ class TripleTown(object):
             else:
                 choice -= v
 
-        #except "Shouldn't ever reach this"
+        raise Exception("Our weighted_random function overflowed. item_dict: {}".format(item_dict))
 
     def make_2d_board(self, x, y):
         '''
@@ -142,6 +145,7 @@ class TripleTown(object):
         self.score = 0
         self.current_board = self.make_2d_board(6, 6)
 
+        # Populate the play area a bit.
         for i in xrange(random.randrange(3, 12)):
             lx = random.randrange(6)
             ly = random.randrange(6)
@@ -152,6 +156,7 @@ class TripleTown(object):
 
             self.place(lx, ly, random.randrange(6))
 
+        # Get us an item to place
         self.current_item = self.weighted_random(self.item_weights)
 
         return self.current_board
@@ -179,6 +184,9 @@ class TripleTown(object):
         This has the side effect of updating the board according to the rules.
         '''
         if x == 0 and y == 0:
+            # If we're at 0, 0, we're in the storage area.
+            # If nothing there, put the current item there
+            # Otherwise, swap current_item and storage.
             if self.current_board[0][0] is None:
                 self.place(0, 0, self.current_item)
                 self.current_item = self.weighted_random(self.item_weights)
@@ -190,11 +198,17 @@ class TripleTown(object):
 
         elif self.current_item == 53:  # Bot
             target = self.current_board[x][y]
-            if target == 51 or target == 52:  # Bear
+
+            # Are we aiming at a bear? Kill it.
+            if target == 51 or target == 52:
                 self.place(x, y, 50)  # Kilt
                 self.update_board(x, y)
+            # I don't know if the actual game lets you waste bots, but
+            # I'm not gonna.
             elif target is None:
                 return False
+            # Otherwise, it erases the target. It costs some points,
+            # but I don't know how many yet.
             else:
                 self.current_board[x][y] = None
                 return True
@@ -202,12 +216,33 @@ class TripleTown(object):
             self.current_item = self.weighted_random(self.item_weights)
 
         elif self.current_item == 0:  # Crystal
-            # How should I do wildcard matches?
-            # Maybe for each in adjacent, check for groups, then call
-            # play() with the type that has the highest number/type
-            # TODO
-            return False
+            n_dict = {}
 
+            # Ok, here's what the next 2 loops do:
+            # First, we build a dict keyed by item type, with sets of nodes as
+            # the values. Then, in reverse order by item value, check for
+            # matches/groups. Change current_item to the first group that
+            # matches and play that at current x, y.
+            for node in self.adjacent_nodes(x, y):
+                node_type = self.current_board[node[0]][node[1]]
+                if node_type not in n_dict:
+                    n_dict[node_type] = self.find_group(node[0], node[1])
+                else:
+                    n_dict[node_type] |= self.find_group(node[0], node[1])
+
+            for item, group in sorted(n_dict.iteritems(), reverse=True):
+                if item is not None and item < 40:
+                    if len(group) >= 3:
+                        self.current_item = item
+                        return self.play(x, y)
+
+            # If we get here, you didn't group!
+            # Why not? We will rock you. :P
+            self.place(x, y, 0)
+            self.update_board(x, y)
+            return True
+
+        # Normal play
         elif self.current_board[x][y] is None:
             self.place(x, y, self.current_item)
             self.score += self.item_scores[self.current_item]
@@ -230,7 +265,8 @@ class TripleTown(object):
         type = self.current_board[x][y]
 
         if len(group) >= 3:
-            # Do stuff
+            # We have a match! Erase the group and place the upgrade at
+            # the current location.
             for node in group:
                 self.current_board[node[0]][node[1]] = None
             if type is None:
@@ -238,10 +274,11 @@ class TripleTown(object):
             elif type == 0:  # Rocks become mountains
                 self.place(x, y, 11)
             elif 0 < type < 8 or type == 10:  # Normal upgrades
+                # Are they getting a bonus for over 3 in the group?
                 if len(group) == 3:
-                    offset = 1  # Used to compute which upgrade to give
+                    offset = 1
                 else:
-                    offset = 11
+                    offset = 12
                 new_type = type % 11 + offset
                 self.place(x, y, new_type)
                 self.score += self.item_scores[new_type]
@@ -250,14 +287,24 @@ class TripleTown(object):
                 self.status()
                 raise Exception("Unsure what to do. Group {} originating at ({}, {}) is type {}.".format(group, x, y, type))
 
-        self.move_bears()
+        self.update_bears()
 
         if loop:
             self.update_board(x, y)
 
         return group
 
-    def move_bears(self):
+    def update_bears(self):
+        '''
+        TODO
+
+        Starting in the upper left corner (skipping the storage area),
+        you iterate over diagonals (/) until you reach a bear.
+
+        Move each bear as you come to it.
+
+        Probably a good idea to check for death as we do this.
+        '''
         pass
 
     def find_group(self, x, y, group=set([])):
@@ -267,19 +314,19 @@ class TripleTown(object):
         '''
         check_type = self.current_board[x][y]
         if check_type is None:
-            return False
+            return False  # Refuse to find groups for empty cells
         group.add((x, y))
 
+        # Loop over all neighbors, recursively add to group as we find matches
         for neighbor in self.adjacent_nodes(x, y):
             node_x = neighbor[0]
             node_y = neighbor[1]
             node_type = self.current_board[neighbor[0]][neighbor[1]]
             # This is big and ugly. Can I improve it?
-            # Currently have to check that I've not checked before,
-            # that the space isn't empty, and that it's of appropriate type.
+            # Currently have to check for redundancy, that the space isn't
+            # empty, and that it's of appropriate type.
             if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type < 40:
-                neighbor_group = self.find_group(node_x, node_y, group)
-                group.union(neighbor_group)
+                group |= self.find_group(node_x, node_y, group)
 
         return group
 
