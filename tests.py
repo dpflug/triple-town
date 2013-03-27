@@ -41,27 +41,69 @@ class TestGroup(TestBoard):
         self.game = TripleTown()
         self.game.current_board = self.game.make_2d_board(6, 6)
         self.game.score = 0
+
+    def test_storage(self):
+        self.game.place(0, 0, 1)
+        self.game.current_item = 2
+        self.game.play(0, 0)
+        self.assertEqual(self.game.get(0, 0), 2)
+        self.assertEqual(self.game.current_item, 1)
+
+    def test_play_nomatch(self):
         self.game.place(2, 3, 1)
         self.game.place(3, 3, 1)
         self.game.current_item = 1
-
-    def test_play_nomatch(self):
         self.game.play(1, 1)
         self.assertEqual(self.game.get(1, 1), 1)
         self.assertEqual(self.game.get(2, 3), 1)
         self.assertEqual(self.game.get(3, 3), 1)
         self.assertEqual(self.game.score, 5)
 
+    def test_play_storage_nomatch(self):
+        self.game.place(0, 0, 1)
+        self.game.place(1, 0, 1)
+        self.game.current_item = 1
+        self.game.play(2, 0)
+        self.assertEqual(self.game.get(0, 0), 1)
+        self.assertEqual(self.game.get(1, 0), 1)
+        self.assertEqual(self.game.get(2, 0), 1)
+        self.assertEqual(self.game.score, 5)
+
     def test_play_match_3(self):
+        self.game.place(2, 3, 1)
+        self.game.place(3, 3, 1)
+        self.game.current_item = 1
         self.game.play(4, 3)
         self.assertEqual(self.game.get(4, 3), 2)
         self.assertEqual(self.game.score, 25)
 
+    def test_play_match_3_all(self):
+        for x in xrange(2, 8):
+            self.game.place(4, 3, None)
+            self.game.place(2, 3, x)
+            self.game.place(3, 3, x)
+            self.game.current_item = x
+            self.game.play(4, 3)
+            self.assertEqual(self.game.get(4, 3), x + 1)
+
     def test_play_match_4(self):
+        self.game.place(2, 3, 1)
+        self.game.place(3, 3, 1)
         self.game.place(4, 3, 1)
+        self.game.current_item = 1
         self.game.play(5, 3)
         self.assertEqual(self.game.get(5, 3), 13)
         self.assertEqual(self.game.score, 45)
+
+    def test_play_match_4_all(self):
+        for x in xrange(2, 8):
+            self.game.place(5, 3, None)
+            self.game.place(2, 3, x)
+            self.game.place(3, 3, x)
+            self.game.place(4, 3, x)
+            self.game.current_item = x
+            self.game.play(5, 3)
+            self.assertEqual(self.game.get(5, 3), x + 12)
 
 
 class TestChain(unittest.TestCase):
@@ -111,6 +153,31 @@ class TestChain(unittest.TestCase):
         self.assertEqual(self.game.get(2, 2), 14)
         self.assertEqual(self.game.score, 225)
 
+    def test_play_match_4_chain_4(self):
+        self.game.place(1, 2, 2)
+        self.game.place(2, 1, 2)
+        self.game.place(3, 2, 2)
+        self.game.place(4, 3, 1)
+        self.game.play(2, 2)
+        self.assertEqual(self.game.get(2, 2), 14)
+        self.assertEqual(self.game.score, 245)
+
+    def test_play_match_3_multichain(self):
+        self.game.place(1, 3, 2)
+        self.game.place(1, 2, 2)
+        self.game.place(1, 1, 3)
+        self.game.place(2, 1, 3)
+        self.game.place(3, 1, 4)
+        self.game.place(3, 2, 4)
+        self.game.current_item = 1
+        self.game.play(2, 2)
+        self.assertEqual(self.game.get(2, 2), 5)
+        self.assertIsNone(self.game.get(1, 3))
+        self.assertIsNone(self.game.get(1, 2))
+        self.assertIsNone(self.game.get(1, 1))
+        self.assertIsNone(self.game.get(2, 1))
+        self.assertIsNone(self.game.get(3, 1))
+        self.assertIsNone(self.game.get(3, 2))
 
 if __name__ == '__main__':
     unittest.main()
