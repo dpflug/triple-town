@@ -121,6 +121,7 @@ class TripleTown(object):
         50: 'g',
         51: 'B',
         52: 'N',
+        53: '#',
     }
 
     def weighted_random(self, item_dict):
@@ -191,6 +192,24 @@ class TripleTown(object):
         self.current_board[x][y] = item
         return True
 
+    def get(self, x, y):
+        '''
+        Returns the item at x, y.
+        '''
+        return self.current_board[x][y]
+
+    def item_at_coord(self, x, y, item):
+        '''
+        Returns a bool showing if item is at coordinates.
+        '''
+        if item is None:
+            return self.get(x, y) is None
+        else:
+            return self.get(x, y) == item
+
+    def coord_empty(self, x, y):
+        return self.item_at_coord(x, y, None)
+
     def play(self, x, y):
         '''
         Plays an item at a place.
@@ -203,31 +222,30 @@ class TripleTown(object):
             # If we're at 0, 0, we're in the storage area.
             # If nothing there, put the current item there
             # Otherwise, swap current_item and storage.
-            if self.current_board[0][0] is None:
+            if self.coord_empty(0, 0):
                 self.place(0, 0, self.current_item)
                 self.current_item = self.weighted_random(self.item_weights)
             else:
                 temp = self.current_item
-                self.current_item = self.current_board[0][0]
+                self.current_item = self.get(0, 0)
                 self.place(0, 0, temp)
             return True
 
         elif self.current_item == 53:  # Bot
-            target = self.current_board[x][y]
+            target = self.get(x, y)
 
             # Are we aiming at a bear? Kill it.
             if target == 51 or target == 52:
                 self.place(x, y, 50)  # Kilt
                 self.update_board(x, y)
                 self.current_item = self.weighted_random(self.item_weights)
-            # I don't know if the actual game lets you waste bots, but
-            # I'm not gonna.
+            # No use wasting bots.
             elif target is None:
                 return False
             # Otherwise, it erases the target. It costs some points,
-            # but I don't know how many yet.
+            # but I don't know how many yet. TODO
             else:
-                self.current_board[x][y] = None
+                self.place(x, y, None)
                 self.current_item = self.weighted_random(self.item_weights)
                 return True
 
@@ -240,7 +258,7 @@ class TripleTown(object):
             # matches/groups. Change current_item to the first group that
             # matches and play that at current x, y.
             for node in self.adjacent_nodes(x, y):
-                node_type = self.current_board[node[0]][node[1]]
+                node_type = self.get(node[0], node[1])
                 if node_type not in n_dict:
                     n_dict[node_type] = self.find_group(node[0], node[1])
                 else:
@@ -259,7 +277,7 @@ class TripleTown(object):
             return True
 
         # Normal play
-        elif self.current_board[x][y] is None:
+        elif self.coord_empty(x, y):
             self.place(x, y, self.current_item)
             self.score += self.item_scores[self.current_item]
             self.update_board(x, y)
@@ -278,13 +296,13 @@ class TripleTown(object):
         # No, it's not. set() is evaluated at compile time and never again.
         # Price of being in a function definition?
         group = self.find_group(x, y, set([]))
-        type = self.current_board[x][y]
+        type = self.get(x, y)
 
         if len(group) >= 3:
             # We have a match! Erase the group and place the upgrade at
             # the current location.
             for node in group:
-                self.current_board[node[0]][node[1]] = None
+                self.place(node[0], node[1], None)
             if type is None:
                 raise Exception("update_board() called on empty cell ({}, {}).".format(x, y))
             elif type == 0:  # Rocks become mountains
@@ -328,9 +346,9 @@ class TripleTown(object):
         for x in xrange(1, 6):
             y = 0
             while x >= 0:
-                if self.current_board[x][y] == 51:
+                if self.get(x, y) == 51:
                     bears.append((x, y))
-                elif self.current_board[x][y] == 52:
+                elif self.get(x, y) == 52:
                     ninja_bears.append((x, y))
                 y += 1
                 x -= 1
@@ -338,27 +356,27 @@ class TripleTown(object):
         for y in xrange(1, 6):
             x = 5
             while y <= 5:
-                if self.current_board[x][y] == 51:
+                if self.get(x, y) == 51:
                     bears.append((x, y))
-                elif self.current_board[x][y] == 52:
+                elif self.get(x, y) == 52:
                     ninja_bears.append((x, y))
                 y += 1
                 x -= 1
 
-        empty_nodes = self.get_empty_nodes()
+        if bears or ninja_bears:
+            empty_nodes = self.get_empty_nodes()
 
         for ninja in ninja_bears:
             x, y = random.choice(empty_nodes)
             # In case 2 ninjas choose the same destination
-            until self.current_board[x][y] is None:
+            while not coord_empty(x, y):
                 x, y = random.choice(empty_nodes)
 
             self.place(ninja[0], ninja[1], 0)
             self.place(x, y, 52)
 
         for bear in bears:
-            adj_blanks = [n for n in self.adjacent_nodes(bear[0], bear[1]) if self.current_board[n[0]][n[1]] is None]
-            print adj_blanks
+            adj_blanks = [n for n in self.adjacent_nodes(bear[0], bear[1]) if self.coord_empty(n[0], n[1])]
             destination = random.choice(adj_blanks)
             self.place(bear[0], bear[1], None)
             self.place(destination[0], destination[1], 51)
@@ -372,7 +390,7 @@ class TripleTown(object):
 
         for x in range(6):
             for y in range(6):
-                if self.current_board[x][y] is None:
+                if self.coord_empty(x, y):
                     empty_nodes.add((x, y))
 
         return empty_nodes
@@ -382,7 +400,7 @@ class TripleTown(object):
         Given coordinates, returns a list of coordinates of connected
         items matching that type.
         '''
-        check_type = self.current_board[x][y]
+        check_type = self.get(x, y)
         if check_type is None:
             return False  # Refuse to find groups for empty cells
         group.add((x, y))
@@ -391,7 +409,7 @@ class TripleTown(object):
         for neighbor in self.adjacent_nodes(x, y):
             node_x = neighbor[0]
             node_y = neighbor[1]
-            node_type = self.current_board[neighbor[0]][neighbor[1]]
+            node_type = self.get(node_x, node_y)
             # This is big and ugly. Can I improve it?
             # Currently have to check for redundancy, that the space isn't
             # empty, and that it's of appropriate type.
@@ -446,15 +464,15 @@ class TripleTown(object):
         '''
 
         # Protect storage, but keep from triggering false positive
-        temp = self.current_board[0][0]
-        self.current_board[0][0] = 1
+        temp = self.get(0, 0)
+        self.place(0, 0, 1)
 
         for x in xrange(6):
             if None in self.current_board[x]:
-                self.current_board[0][0] = temp
+                self.place(0, 0, temp)
                 return True
 
-        self.current_board[0][0] = temp
+        self.place(0, 0, temp)
         return False
 
     def run(self):
@@ -479,6 +497,9 @@ class TripleTown(object):
             coords[0] = int(coords[1]) - 1
             coords[1] = t
             self.play(coords[0], coords[1])
+
+        print "Final status:"
+        self.status()
 
     def item_num_to_display(self, item_type):
         '''
