@@ -369,7 +369,7 @@ class TripleTown(object):
         for ninja in ninja_bears:
             x, y = random.choice(empty_nodes)
             # In case 2 ninjas choose the same destination
-            while not coord_empty(x, y):
+            while not self.coord_empty(x, y):
                 x, y = random.choice(empty_nodes)
 
             self.place(ninja[0], ninja[1], 0)
