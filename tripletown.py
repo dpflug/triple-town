@@ -398,7 +398,22 @@ class TripleTown(object):
             self.place(bear[0], bear[1], None)
             self.place(destination[0], destination[1], 51)
 
-    def get_empty_nodes():
+        unchecked_bears = set(bears)
+        checked_bears = set([])
+
+        while unchecked_bears:
+            lead_bear = unchecked_bears.pop()
+            bear_blank_group = self.find_group(lead_bear[0], lead_bear[1], set([]))
+            unchecked_bears.add(lead_bear)
+            bear_group = unchecked_bears.intersection(bear_blank_group)
+            for bear in bear_group:
+                unchecked_bears.remove(bear)
+                checked_bears.add(bear)
+
+                if len(bear_blank_group) <= len(bear_group):
+                    self.place(bear[0], bear[1], 50)
+
+    def get_empty_nodes(self):
         '''
         Returns coordinates of all the empty nodes on the board as
         a set of tuples.
@@ -432,6 +447,13 @@ class TripleTown(object):
             # empty, and that it's of appropriate type.
             if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type < 40:
                 group |= self.find_group(node_x, node_y, group)
+
+            # I'm allowing None in the bear group so I can check for life.
+            if neighbor not in group and check_type == 51 and (node_type == 51 or node_type is None):
+                if node_type == 51:
+                    group |= self.find_group(node_x, node_y, group)
+                else:
+                    group.add(neighbor)
 
         return group
 
