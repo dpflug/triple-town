@@ -296,30 +296,47 @@ class TripleTown(object):
         # No, it's not. set() is evaluated at compile time and never again.
         # Price of being in a function definition?
         group = self.find_group(x, y, set([]))
-        type = self.get(x, y)
+        update_type = self.get(x, y)
 
         if len(group) >= 3:
             # We have a match! Erase the group and place the upgrade at
             # the current location.
-            for node in group:
-                self.place(node[0], node[1], None)
-            if type is None:
+
+            # First, groups that don't upgrade.
+            if update_type in [8, 19, 40] or update_type > 50:
+                pass
+
+            # Then, handle odd use
+            elif update_type is None:
                 raise Exception("update_board() called on empty cell ({}, {}).".format(x, y))
-            elif type == 0:  # Rocks become mountains
-                self.place(x, y, 11)
-            elif 0 < type < 8 or type == 10:  # Normal upgrades
-                # Are they getting a bonus for over 3 in the group?
-                if len(group) == 3:
-                    offset = 1
+
+            # Now, upgrades.
+            else:
+                # Normal upgrades
+                if 0 < update_type < 10 or 11 < update_type < 20:
+                    # Are they getting a bonus for over 3 in the group?
+                    if len(group) == 3:
+                        offset = 1
+                    else:
+                        offset = 12
+                    new_type = update_type % 11 + offset
+                # Tombstones
+                elif update_type == 50:
+                    if len(group) == 3:
+                        new_type = 9
+                    else:
+                        new_type = 20
+                # Treasure upgrades. At this point, we should have removed all others.
+                elif update_type >= 10:
+                    new_type = 40
+                # Dunno what happen?
                 else:
-                    offset = 12
-                new_type = type % 11 + offset
+                    raise Exception("WAT? {} at ({}, {})".format(update_type, x, y))
+                for node in group:
+                    self.place(node[0], node[1], None)
                 self.place(x, y, new_type)
                 self.score += self.item_scores[new_type]
                 loop = True
-            else:
-                self.status()
-                raise Exception("Unsure what to do. Group {} originating at ({}, {}) is type {}.".format(group, x, y, type))
 
         if loop:
             self.update_board(x, y)
