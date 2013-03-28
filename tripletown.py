@@ -376,6 +376,7 @@ class TripleTown(object):
         bears = []
         ninja_bears = []
 
+        # Search diagonally
         for x in xrange(1, 6):
             y = 0
             while x >= 0:
@@ -386,6 +387,7 @@ class TripleTown(object):
                 y += 1
                 x -= 1
 
+        # Search diagonally, part 2: The bear necessities
         for y in xrange(1, 6):
             x = 5
             while y <= 5:
@@ -398,25 +400,24 @@ class TripleTown(object):
 
         if bears or ninja_bears:
             empty_nodes = self.get_empty_nodes()
+        else:
+            # No bears to worry about updating
+            return True
 
+        # Ninja! Vanish!
+        # While checking for trapped bears, we don't take into account
+        # the ninja bears, so why not have them disappear while the check is made?
+        # Seems like a very ninja thing to do.
+        # The ninja_bears list remains intact and we put them back immediately after.
         for ninja in ninja_bears:
-            x, y = random.choice(empty_nodes)
-            # In case 2 ninjas choose the same destination
-            while not self.coord_empty(x, y):
-                x, y = random.choice(empty_nodes)
-
             self.place(ninja[0], ninja[1], 0)
-            self.place(x, y, 52)
-
-        for bear in bears:
-            adj_blanks = [n for n in self.adjacent_nodes(bear[0], bear[1]) if self.coord_empty(n[0], n[1])]
-            destination = random.choice(adj_blanks)
-            self.place(bear[0], bear[1], None)
-            self.place(destination[0], destination[1], 51)
 
         unchecked_bears = set(bears)
         checked_bears = set([])
 
+        # Go through the set of unchecked bears. Group them with blanks and bears by adjacency.
+        # Then, make a second list of just bears.
+        # If there are no more bears than bears + blanks, they must be trapped. Kill em.
         while unchecked_bears:
             lead_bear = unchecked_bears.pop()
             bear_blank_group = self.find_group(lead_bear[0], lead_bear[1], set([]))
@@ -424,10 +425,30 @@ class TripleTown(object):
             bear_group = unchecked_bears.intersection(bear_blank_group)
             for bear in bear_group:
                 unchecked_bears.remove(bear)
+                bears.remove(bear)  # Don't want to try moving what isn't there.
                 checked_bears.add(bear)
 
                 if len(bear_blank_group) <= len(bear_group):
                     self.place(bear[0], bear[1], 50)
+
+        # Ninja bears just jump around randomly, near as I can tell.
+        for ninja in ninja_bears:
+            x, y = random.choice(empty_nodes)
+            # In case 2 ninjas choose the same destination
+            while not self.coord_empty(x, y):
+                x, y = random.choice(empty_nodes)
+
+            self.place(x, y, 52)
+
+        # Now we move the normal bears.
+        for bear in bears:
+            adj_blanks = [n for n in self.adjacent_nodes(bear[0], bear[1]) if self.coord_empty(n[0], n[1])]
+            if adj_blanks:  # Bears can be trapped by other bears
+                destination = random.choice(adj_blanks)
+                self.place(bear[0], bear[1], None)
+                self.place(destination[0], destination[1], 51)
+
+        return True
 
     def get_empty_nodes(self):
         '''
