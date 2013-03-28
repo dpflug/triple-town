@@ -269,6 +269,7 @@ class TestCrystal(unittest.TestCase):
             self.game.play(3, 3)
             self.assertEqual(self.game.get(3, 3), x + 12)
 
+
 class TestBear(unittest.TestCase):
     '''
     Test that bears move when placed,
@@ -289,6 +290,68 @@ class TestBear(unittest.TestCase):
         # They never choose to stay put.
         self.assertIsNone(self.game.get(3, 3))
 
+    def test_bear_move_storage(self):
+        # They should move when we put something in storage.
+        self.game.place(1, 1, 51)
+        self.game.current_item = 1
+        self.game.play(0, 0)
+        self.assertIsNone(self.game.get(1, 1))
+
+    def test_bear_move_crowded(self):
+        # Test that bears move correctly (and don't die) when crowded by
+        # other bears
+        pass
+
+    def test_bear_grass_trap(self):
+        # Trap on all 4 sides
+        self.game.place(3, 3, 51)
+        self.game.place(2, 3, 1)
+        self.game.place(3, 2, 1)
+        self.game.place(4, 3, 1)
+        self.game.current_item = 1
+        self.game.play(3, 4)
+        self.assertEqual(self.game.get(3, 3), 50)
+
+    def test_bear_corner_grass_trap(self):
+        # Trap in a corner
+        self.game.place(5, 5, 51)
+        self.game.place(4, 5, 1)
+        self.game.current_item = 1
+        self.game.play(5, 4)
+        self.assertEqual(self.game.get(5, 5), 50)
+
+    def test_bear_bear_trap(self):
+        # Fill empty spot with bear
+        self.game.place(3, 3, 51)
+        self.game.place(3, 2, 1)
+        self.game.place(2, 3, 1)
+        self.game.place(3, 4, 1)
+        self.game.place(4, 4, 1)
+        self.game.place(4, 2, 1)
+        self.game.place(5, 3, 1)
+        self.game.play(4, 3)
+        self.assertEqual(self.game.get(4, 3), 50)
+        self.assertEqual(self.game.get(3, 3), 50)
+
+    def test_bear_corner_bear_trap(self):
+        # Fill empty spot in corner with bear
+        pass
+
+    def test_bear_trap_chain(self):
+        # Trap 3 bears
+        pass
+
+    def test_bear_trap_chain_2(self):
+        # Trap 3 bears with 2 churches adjacent
+        pass
+
+    def test_bear_trap_4_chain(self):
+        # Trap 4 bears with 2 churches adjacent
+        pass
+
+    def test_bear_trap_3_chain_3(self):
+        # Trap 3 bears with 3 churches adjacent
+        pass
 
 if __name__ == '__main__':
     unittest.main()
