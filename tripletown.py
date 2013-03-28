@@ -60,11 +60,11 @@ class TripleTown(object):
 
     # Removal penalty
     item_remove_penalty = {
-        0: 0
-        1: 10
-        2: 40
-        13: 80
-        5: 3000
+        0: 0,
+        1: 10,
+        2: 40,
+        5: 3000,
+        13: 80,
         # Church: -1500 (maybe church+?)
     }
 
@@ -249,15 +249,15 @@ class TripleTown(object):
                 self.update_board(x, y)
                 self.current_item = self.weighted_random(self.item_weights)
             # No use wasting bots.
-            elif target is None:
+            elif target in [None, 7, 8, 18, 19]:
                 return False
             # Otherwise, it erases the target. It costs some points,
             # but I don't know how many yet. TODO
             else:
                 self.place(x, y, None)
-                if target in item_remove_penalty:
-                    self.score -= item_remove_penalty[target]
-                else:
+                try:
+                    self.score -= self.item_remove_penalty[target]
+                except IndexError:
                     print "I don't have a removal penalty for {}!".format(self.item_num_names[target])
                 self.current_item = self.weighted_random(self.item_weights)
                 return True
