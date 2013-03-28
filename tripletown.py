@@ -14,6 +14,8 @@ class TripleTown(object):
     To be more specific, calling print() on the board will give
     you its inverse.
     '''
+
+    # How often items appear
     item_weights = {
         1: 4193,
         2: 1070,
@@ -25,6 +27,7 @@ class TripleTown(object):
         4: 44,
     }
 
+    # Score for creating item
     item_scores = {
         0: 0,
         1: 5,
@@ -56,11 +59,16 @@ class TripleTown(object):
     }
 
     # Removal penalty
-    # Grass: -10
-    # bush: -40
-    # bush+: -80
-    # Church: -1500 (maybe church+?)
+    item_remove_penalty = {
+        0: 0
+        1: 10
+        2: 40
+        13: 80
+        5: 3000
+        # Church: -1500 (maybe church+?)
+    }
 
+    # Mapping of numbers/values to names
     item_num_names = {
         None: 'blank',
         # When we're getting the name, it's for the current item,
@@ -94,6 +102,7 @@ class TripleTown(object):
         53: 'bot',
     }
 
+    # Mapping of number/value to display character
     item_num_display = {
         None: '_',
         0: 'r',
@@ -246,6 +255,10 @@ class TripleTown(object):
             # but I don't know how many yet. TODO
             else:
                 self.place(x, y, None)
+                if target in item_remove_penalty:
+                    self.score -= item_remove_penalty[target]
+                else:
+                    print "I don't have a removal penalty for {}!".format(self.item_num_names[target])
                 self.current_item = self.weighted_random(self.item_weights)
                 return True
 
