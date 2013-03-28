@@ -274,9 +274,13 @@ class TripleTown(object):
                 node_type = self.get(node[0], node[1])
                 if node_type is not None:
                     if node_type not in n_dict:
-                        n_dict[node_type] = self.find_group(node[0], node[1], set([]))
+                        n_dict[node_type] = self.find_group(node[0],
+                                                            node[1],
+                                                            set([]))
                     else:
-                        n_dict[node_type] |= self.find_group(node[0], node[1], set([]))
+                        n_dict[node_type] |= self.find_group(node[0],
+                                                             node[1],
+                                                             set([]))
 
             for item, group in sorted(n_dict.iteritems(), reverse=True):
                 if item < 40:
@@ -342,7 +346,8 @@ class TripleTown(object):
                         new_type = 9
                     else:
                         new_type = 20
-                # Treasure upgrades. At this point, we should have removed all others.
+                # Treasure upgrades. At this point, we should have removed
+                # all others.
                 elif update_type >= 10:
                     new_type = 40
                 # Dunno what happen?
@@ -363,8 +368,6 @@ class TripleTown(object):
 
     def update_bears(self):
         '''
-        TODO
-
         Starting in the upper left corner (skipping the storage area),
         you iterate over diagonals (/) until you reach a bear.
 
@@ -406,21 +409,25 @@ class TripleTown(object):
 
         # Ninja! Vanish!
         # While checking for trapped bears, we don't take into account
-        # the ninja bears, so why not have them disappear while the check is made?
-        # Seems like a very ninja thing to do.
-        # The ninja_bears list remains intact and we put them back immediately after.
+        # the ninja bears, so why not have them disappear while the
+        # check is made? Seems like a very ninja thing to do.
+        # The ninja_bears list remains intact and we put them
+        # back immediately after.
         for ninja in ninja_bears:
             self.place(ninja[0], ninja[1], 0)
 
         unchecked_bears = set(bears)
         checked_bears = set([])
 
-        # Go through the set of unchecked bears. Group them with blanks and bears by adjacency.
-        # Then, make a second list of just bears.
-        # If there are no more bears than bears + blanks, they must be trapped. Kill em.
+        # Go through the set of unchecked bears. Group them with blanks and
+        # bears by adjacency. Then, make a second list of just bears.
+        # If there are no more bears than bears + blanks, they must
+        # be trapped. Kill em.
         while unchecked_bears:
             lead_bear = unchecked_bears.pop()
-            bear_blank_group = self.find_group(lead_bear[0], lead_bear[1], set([]))
+            bear_blank_group = self.find_group(lead_bear[0],
+                                               lead_bear[1],
+                                               set([]))
             unchecked_bears.add(lead_bear)
             bear_group = unchecked_bears.intersection(bear_blank_group)
             for bear in bear_group:
@@ -430,6 +437,12 @@ class TripleTown(object):
 
                 if len(bear_blank_group) <= len(bear_group):
                     self.place(bear[0], bear[1], 50)
+
+            # This group is dead. We have to check for church creation.
+            #self.update_board(lead_bear[0], lead_bear[1])
+            # Oh...can't do this because that would cause update_bears to
+            # be called again. :\ I suppose update_bears shouldn't be in
+            # update_board. How to separate them? TODO
 
         # Ninja bears just jump around randomly, near as I can tell.
         for ninja in ninja_bears:
