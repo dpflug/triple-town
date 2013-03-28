@@ -265,23 +265,25 @@ class TripleTown(object):
         elif self.current_item == 0:  # Crystal
             n_dict = {}
 
-            # Ok, here's what the next 2 loops do:
+            # Ok, here's what the next 2 loops should do:
             # First, we build a dict keyed by item type, with sets of nodes as
             # the values. Then, in reverse order by item value, check for
             # matches/groups. Change current_item to the first group that
             # matches and play that at current x, y.
             for node in self.adjacent_nodes(x, y):
                 node_type = self.get(node[0], node[1])
-                if node_type not in n_dict:
-                    n_dict[node_type] = self.find_group(node[0], node[1])
-                else:
-                    n_dict[node_type] |= self.find_group(node[0], node[1])
+                if node_type is not None:
+                    if node_type not in n_dict:
+                        n_dict[node_type] = self.find_group(node[0], node[1], set([]))
+                    else:
+                        n_dict[node_type] |= self.find_group(node[0], node[1], set([]))
 
             for item, group in sorted(n_dict.iteritems(), reverse=True):
-                if item is not None and item < 40:
-                    if len(group) >= 3:
+                if item < 40:
+                    if len(group) >= 2:
                         self.current_item = item
                         return self.play(x, y)
+                        return True
 
             # If we get here, you didn't group!
             # Why not? We will rock you. :P
@@ -295,6 +297,7 @@ class TripleTown(object):
             self.score += self.item_scores[self.current_item]
             self.update_board(x, y)
             self.current_item = self.weighted_random(self.item_weights)
+            return True
 
         else:
             return False
