@@ -231,6 +231,7 @@ class TripleTown(object):
             # If we're at 0, 0, we're in the storage area.
             # If nothing there, put the current item there
             # Otherwise, swap current_item and storage.
+            self.update_bears()
             if self.coord_empty(0, 0):
                 self.place(0, 0, self.current_item)
                 self.current_item = self.weighted_random(self.item_weights)
@@ -260,6 +261,7 @@ class TripleTown(object):
                 except IndexError:
                     print "I don't have a removal penalty for {}!".format(self.item_num_names[target])
                 self.current_item = self.weighted_random(self.item_weights)
+                self.update_bears()
                 return True
 
         elif self.current_item == 0:  # Crystal
@@ -432,10 +434,10 @@ class TripleTown(object):
             bear_group = unchecked_bears.intersection(bear_blank_group)
             for bear in bear_group:
                 unchecked_bears.remove(bear)
-                bears.remove(bear)  # Don't want to try moving what isn't there.
                 checked_bears.add(bear)
-
                 if len(bear_blank_group) <= len(bear_group):
+                    # Don't want to try moving what isn't there.
+                    bears.remove(bear)
                     self.place(bear[0], bear[1], 50)
 
             # This group is dead. We have to check for church creation.
