@@ -1,0 +1,3 @@
+Correct the update_board(), update_bears(), update_board() issue.
+
+Allow treasure chests to be opened.
