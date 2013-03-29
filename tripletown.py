@@ -104,6 +104,69 @@ class TripleTown(object):
         52: 'ninja',
         53: 'bot',
     }
+    # What 3 groups upgrade to, False if nothing.
+    item_num_upgrade_3 = {
+        0: 11,
+        1: 2,
+        2: 3,
+        3: 4,
+        4: 5,
+        5: 6,
+        6: 7,
+        7: 8,
+        8: False,
+        9: 10,
+        10: 40,
+        11: 40,
+        12: 2,
+        13: 3,
+        14: 4,
+        15: 5,
+        16: 6,
+        17: 7,
+        18: False,
+        19: False,
+        20: 21,
+        21: 40,
+        30: False,
+        40: 41,
+        41: False,
+        50: 9,
+        51: False,
+        52: False,
+    }
+
+    # What 4+ groups upgrade to, False if nothing.
+    item_num_upgrade_4 = {
+        0: 11,
+        1: 13,
+        2: 14,
+        3: 15,
+        4: 16,
+        5: 17,
+        6: 18,
+        7: 19,
+        8: 30,
+        9: 21,
+        10: 40,
+        11: 40,
+        12: 13,
+        13: 14,
+        14: 15,
+        15: 16,
+        16: 17,
+        17: 18,
+        18: 19,
+        19: 30,
+        20: 21,
+        21: 40,
+        30: False,
+        40: 41,
+        41: False,
+        50: 20,
+        51: False,
+        52: False,
+    }
 
     # Mapping of number/value to display character
     item_num_display = {
@@ -225,6 +288,12 @@ class TripleTown(object):
     def coord_empty(self, x, y):
         return self.item_at_coord(x, y, None)
 
+    def get_item_upgrade(self, item, group_size):
+        if group_size == 3:
+            return self.item_num_upgrade_3[item]
+        else:
+            return self.item_num_upgrade_4[item]
+
     def play(self, x, y):
         '''
         Plays an item at a place.
@@ -336,43 +405,12 @@ class TripleTown(object):
             # the current location.
 
             # First, groups that don't upgrade.
-            if update_type in [8, 19] or update_type > 50:
-                pass
-
-            # Then, handle odd use
-            elif update_type is None:
-                raise Exception("update_board() called on empty cell ({}, {}).".format(x, y))
-
-            # Now, upgrades.
-            else:
-                # Normal upgrades
-                if 0 < update_type < 10 or 11 < update_type < 20:
-                    # Are they getting a bonus for over 3 in the group?
-                    if len(group) == 3:
-                        offset = 1
-                    else:
-                        offset = 12
-                    new_type = update_type % 11 + offset
-                # Tombstones
-                elif update_type == 50:
-                    if len(group) == 3:
-                        new_type = 9
-                    else:
-                        new_type = 20
-                # Treasure upgrade
-                elif update_type == 40:
-                    new_type = 41
-                # Upgrades to treasure. At this point, we should have
-                # removed all others.
-                elif update_type >= 10:
-                    new_type = 40
-                # Dunno what happen?
-                else:
-                    raise Exception("WAT? {} at ({}, {})".format(update_type, x, y))
+            upgrade = self.get_item_upgrade(update_type, len(group))
+            if upgrade:
                 for node in group:
                     self.place(node[0], node[1], None)
-                self.place(x, y, new_type)
-                self.score += self.item_scores[new_type]
+                self.place(x, y, upgrade)
+                self.score += self.item_scores[upgrade]
                 loop = True
 
         if loop:
