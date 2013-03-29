@@ -52,6 +52,7 @@ class TripleTown(object):
         20: 2000,
         21: 10000,
         40: 10000,
+        41: 1500,
         50: 0,
         51: 0,
         52: 0,
@@ -95,7 +96,9 @@ class TripleTown(object):
         19: 'floating castle+',
         20: 'church+',
         21: 'cathedral+',
-        40: 'treasure',
+        30: 'triple castle',
+        40: 'small treasure',
+        41: 'big treasure',
         50: 'gravestone',
         51: 'bear',
         52: 'ninja',
@@ -127,6 +130,9 @@ class TripleTown(object):
         19: 'F',
         20: '%',
         21: '#',
+        30: '~',
+        40: '*',
+        41: '$',
         50: 'g',
         51: 'B',
         52: 'N',
@@ -252,6 +258,11 @@ class TripleTown(object):
             # No use wasting bots.
             elif target in [None, 7, 8, 18, 19]:
                 return False
+            # 1000 points and a treasure chest for mountains
+            elif target == 11:
+                self.score += 1000
+                self.place(x, y, 40)
+                self.update_board(x, y)
             # Otherwise, it erases the target. It costs some points,
             # but I don't know how many yet. TODO
             else:
@@ -325,7 +336,7 @@ class TripleTown(object):
             # the current location.
 
             # First, groups that don't upgrade.
-            if update_type in [8, 19, 40] or update_type > 50:
+            if update_type in [8, 19] or update_type > 50:
                 pass
 
             # Then, handle odd use
@@ -348,8 +359,11 @@ class TripleTown(object):
                         new_type = 9
                     else:
                         new_type = 20
-                # Treasure upgrades. At this point, we should have removed
-                # all others.
+                # Treasure upgrade
+                elif update_type == 40:
+                    new_type = 41
+                # Upgrades to treasure. At this point, we should have
+                # removed all others.
                 elif update_type >= 10:
                     new_type = 40
                 # Dunno what happen?
@@ -497,7 +511,7 @@ class TripleTown(object):
             # This is big and ugly. Can I improve it?
             # Currently have to check for redundancy, that the space isn't
             # empty, and that it's of appropriate type.
-            if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type < 40:
+            if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type <= 40:
                 group |= self.find_group(node_x, node_y, group)
 
             # I'm allowing None in the bear group so I can check for life.
