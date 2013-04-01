@@ -252,7 +252,7 @@ class TripleTown(object):
             self.place(lx, ly, random.randrange(6))
 
         # Get us an item to place
-        self.current_item = self.weighted_random(self.item_weights)
+        self.get_new_current_item()
 
         return self.current_board
 
@@ -294,6 +294,9 @@ class TripleTown(object):
         else:
             return self.item_num_upgrade_4[item]
 
+    def get_new_current_item(self):
+        return self.current_item = self.weighted_random(self.item_weights)
+
     def play(self, x, y):
         '''
         Plays an item at a place.
@@ -309,7 +312,7 @@ class TripleTown(object):
             self.update_bears()
             if self.coord_empty(0, 0):
                 self.place(0, 0, self.current_item)
-                self.current_item = self.weighted_random(self.item_weights)
+                self.get_new_current_item()
             else:
                 temp = self.current_item
                 self.current_item = self.get(0, 0)
@@ -323,7 +326,7 @@ class TripleTown(object):
             if target == 51 or target == 52:
                 self.place(x, y, 50)  # Kilt
                 self.update_board(x, y)
-                self.current_item = self.weighted_random(self.item_weights)
+                self.get_new_current_item()
             # No use wasting bots.
             elif target in [None, 7, 8, 18, 19]:
                 return False
@@ -340,7 +343,7 @@ class TripleTown(object):
                     self.score -= self.item_remove_penalty[target]
                 except IndexError:
                     print "I don't have a removal penalty for {}!".format(self.item_num_names[target])
-                self.current_item = self.weighted_random(self.item_weights)
+                self.get_new_current_item()
                 self.update_bears()
                 return True
 
@@ -382,7 +385,7 @@ class TripleTown(object):
             self.place(x, y, self.current_item)
             self.score += self.item_scores[self.current_item]
             self.update_board(x, y)
-            self.current_item = self.weighted_random(self.item_weights)
+            self.get_new_current_item()
             return True
 
         else:
