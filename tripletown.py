@@ -391,9 +391,11 @@ class TripleTown(object):
         else:
             return False
 
-    def update_board(self, x, y):
+    def update_board(self, x, y, bears_moved=False):
         '''
         Updates the board, given the coords of the placed item.
+
+        Also takes a bool indicating whether the bears have already moved or not.
         '''
         loop = False
         # For some reason, I have to pass an empty set to find_group. Why?
@@ -418,7 +420,7 @@ class TripleTown(object):
 
         if loop:
             self.update_board(x, y)
-        else:
+        elif not bears_moved:
             self.update_bears()
 
         return group
@@ -474,7 +476,7 @@ class TripleTown(object):
             self.place(ninja[0], ninja[1], 0)
 
         unchecked_bears = set(bears)
-        checked_bears = set()
+        dead_bear_groups = {}
 
         # Go through the set of unchecked bears. Group them with blanks and
         # bears by adjacency. Then, make a second list of just bears.
@@ -489,17 +491,14 @@ class TripleTown(object):
             bear_group = unchecked_bears.intersection(bear_blank_group)
             for bear in bear_group:
                 unchecked_bears.remove(bear)
-                checked_bears.add(bear)
                 if len(bear_blank_group) <= len(bear_group):
                     # Don't want to try moving what isn't there.
                     bears.remove(bear)
+                    dead_bear_groups[lead_bear] = bear_group
                     self.place(bear[0], bear[1], 50)
 
-            # This group is dead. We have to check for church creation.
-            #self.update_board(lead_bear[0], lead_bear[1])
-            # Oh...can't do this because that would cause update_bears to
-            # be called again. :\ I suppose update_bears shouldn't be in
-            # update_board. How to separate them? TODO
+        for lead_bear in dead_bear_groups:
+            self.update_board(lead_bear[0], lead_bear[1], True)
 
         # Ninja bears just jump around randomly, near as I can tell.
         for ninja in ninja_bears:
@@ -552,15 +551,19 @@ class TripleTown(object):
             # This is big and ugly. Can I improve it?
             # Currently have to check for redundancy, that the space isn't
             # empty, and that it's of appropriate type.
-            if neighbor not in group and node_type is not None and (check_type % 11) == (node_type % 11) and node_type <= 40:
-                group |= self.find_group(node_x, node_y, group)
-
-            # I'm allowing None in the bear group so I can check for life.
-            if neighbor not in group and check_type == 51 and (node_type == 51 or node_type is None):
-                if node_type == 51:
+            if neighbor not in group:
+                if node_type is not None and (check_type % 11) == (node_type % 11) and node_type <= 40:
                     group |= self.find_group(node_x, node_y, group)
-                else:
-                    group.add(neighbor)
+
+            # I'm allowing None and ninjas in the bear group so I can check for life.
+                if check_type == 51 and (node_type in [None, 51, 52]):
+                    if node_type == 51:
+                        group |= self.find_group(node_x, node_y, group)
+                    else:
+                        group.add(neighbor)
+
+                if node_type == 50 and check_type == 50:
+                    group |= self.find_group(node_x, node_y, group)
 
         return group
 
