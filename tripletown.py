@@ -358,11 +358,11 @@ class TripleTown(object):
                     if node_type not in n_dict:
                         n_dict[node_type] = self.find_group(node[0],
                                                             node[1],
-                                                            set([]))
+                                                            set())
                     else:
                         n_dict[node_type] |= self.find_group(node[0],
                                                              node[1],
-                                                             set([]))
+                                                             set())
 
             for item, group in sorted(n_dict.iteritems(), reverse=True):
                 if item < 40:
@@ -397,7 +397,7 @@ class TripleTown(object):
         # Is group not being reinitialized?
         # No, it's not. set() is evaluated at compile time and never again.
         # Price of being in a function definition?
-        group = self.find_group(x, y, set([]))
+        group = self.find_group(x, y, set())
         update_type = self.get(x, y)
 
         if len(group) >= 3:
@@ -471,7 +471,7 @@ class TripleTown(object):
             self.place(ninja[0], ninja[1], 0)
 
         unchecked_bears = set(bears)
-        checked_bears = set([])
+        checked_bears = set()
 
         # Go through the set of unchecked bears. Group them with blanks and
         # bears by adjacency. Then, make a second list of just bears.
@@ -481,7 +481,7 @@ class TripleTown(object):
             lead_bear = unchecked_bears.pop()
             bear_blank_group = self.find_group(lead_bear[0],
                                                lead_bear[1],
-                                               set([]))
+                                               set())
             unchecked_bears.add(lead_bear)
             bear_group = unchecked_bears.intersection(bear_blank_group)
             for bear in bear_group:
@@ -522,7 +522,7 @@ class TripleTown(object):
         Returns coordinates of all the empty nodes on the board as
         a set of tuples.
         '''
-        empty_nodes = set([])
+        empty_nodes = set()
 
         for x in range(6):
             for y in range(6):
@@ -531,7 +531,7 @@ class TripleTown(object):
 
         return empty_nodes
 
-    def find_group(self, x, y, group=set([])):
+    def find_group(self, x, y, group=set()):
         '''
         Given coordinates, returns a list of coordinates of connected
         items matching that type.
