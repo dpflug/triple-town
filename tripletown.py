@@ -295,7 +295,8 @@ class TripleTown(object):
             return self.item_num_upgrade_4[item]
 
     def get_new_current_item(self):
-        return self.current_item = self.weighted_random(self.item_weights)
+        self.current_item = self.weighted_random(self.item_weights)
+        return self.current_item
 
     def play(self, x, y):
         '''
@@ -609,19 +610,21 @@ class TripleTown(object):
 
     def game_running(self):
         '''
-        Returns True if there's a blank spot on the board, otherwise False.
+        Returns True if a board exists and has None in it,
+        otherwise False.
         '''
+        if self.current_board:
+            # Protect storage, but keep from triggering false positive
+            temp = self.get(0, 0)
+            self.place(0, 0, 1)
 
-        # Protect storage, but keep from triggering false positive
-        temp = self.get(0, 0)
-        self.place(0, 0, 1)
+            for x in xrange(6):
+                if None in self.current_board[x]:
+                    self.place(0, 0, temp)
+                    return True
 
-        for x in xrange(6):
-            if None in self.current_board[x]:
-                self.place(0, 0, temp)
-                return True
+            self.place(0, 0, temp)
 
-        self.place(0, 0, temp)
         return False
 
     def run(self):
