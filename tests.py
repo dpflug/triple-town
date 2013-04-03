@@ -551,5 +551,14 @@ class TestBear(unittest.TestCase):
         self.game.play(5, 5)
         self.assertEqual(self.game.get(5, 5), 10)
 
+    def test_bear_endgame_trap(self):
+        for x in xrange(6):
+            for y in xrange(6):
+                self.game.place(x, y, 1)
+        for x in xrange(3):
+            self.game.place(5, x, 51)
+        self.game.place(5, 3, None)
+        self.game.play(5, 3)
+
 if __name__ == '__main__':
     unittest.main()

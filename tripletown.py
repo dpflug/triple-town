@@ -473,6 +473,13 @@ class TripleTown(object):
             # No bears to worry about updating
             return True
 
+        if len(empty_nodes) == 0:
+            bears = set(bears)
+            for bear in bears.union(set(ninja_bears)):
+                self.place(bear[0], bear[1], 50)
+            return False
+
+
         # Ninja! Vanish!
         # While checking for trapped bears, we don't take into account
         # the ninja bears, so why not have them disappear while the
@@ -480,7 +487,7 @@ class TripleTown(object):
         # The ninja_bears list remains intact and we put them
         # back immediately after.
         for ninja in ninja_bears:
-            self.place(ninja[0], ninja[1], 0)
+            self.place(ninja[0], ninja[1], None)
 
         unchecked_bears = set(bears)
         dead_bear_groups = {}
@@ -507,12 +514,19 @@ class TripleTown(object):
         for lead_bear in dead_bear_groups:
             self.update_board(lead_bear[0], lead_bear[1], True)
 
+        empty_nodes = self.get_empty_nodes()
+
         # Ninja bears just jump around randomly, near as I can tell.
         for ninja in ninja_bears:
-            x, y = random.choice(empty_nodes)
+            choices = list(empty_nodes)
+            try:
+                choices.remove(ninja)
+            except ValueError:
+                pass
+            x, y = random.choice(choices)
             # In case 2 ninjas choose the same destination
             while not self.coord_empty(x, y):
-                x, y = random.choice(empty_nodes)
+                x, y = random.choice(choices)
 
             self.place(x, y, 52)
 
