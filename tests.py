@@ -349,6 +349,13 @@ class TestCrystal(unittest.TestCase):
         self.assertEqual(self.game.get(3, 3), 0)
         self.assertEqual(self.game.score, 0)
 
+    def test_crystal_match_rock(self):
+        # They can match rocks to become mountains.
+        self.game.place(2, 3, 0)
+        self.game.place(3, 2, 0)
+        self.game.play(3, 3)
+        self.assertEqual(self.game.get(3, 3), 11)
+
     def test_crystal_match_3(self):
         # They match anything upgradable.
         for x in xrange(1, 8):

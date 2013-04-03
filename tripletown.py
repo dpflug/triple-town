@@ -371,9 +371,15 @@ class TripleTown(object):
             for item, group in sorted(n_dict.iteritems(), reverse=True):
                 if item < 40:
                     if len(group) >= 2:
-                        self.current_item = item
-                        return self.play(x, y)
-                        return True
+                        if item == 0:
+                            for node in group:
+                                self.place(node[0], node[1], None)
+                            self.place(x, y, 11)
+                            self.get_new_current_item()
+                            self.update_board(x, y)
+                        else:
+                            self.current_item = item
+                            return self.play(x, y)
 
             # If we get here, you didn't group!
             # Why not? We will rock you. :P
@@ -613,17 +619,21 @@ class TripleTown(object):
         Returns True if a board exists and has None in it,
         otherwise False.
         '''
-        if self.current_board:
-            # Protect storage, but keep from triggering false positive
-            temp = self.get(0, 0)
-            self.place(0, 0, 1)
+        try:
+            self.current_board
+        except AttributeError:
+            return False
 
-            for x in xrange(6):
-                if None in self.current_board[x]:
-                    self.place(0, 0, temp)
-                    return True
+        # Protect storage, but keep from triggering false positive
+        temp = self.get(0, 0)
+        self.place(0, 0, 1)
 
-            self.place(0, 0, temp)
+        for x in xrange(6):
+            if None in self.current_board[x]:
+                self.place(0, 0, temp)
+                return True
+
+        self.place(0, 0, temp)
 
         return False
 
