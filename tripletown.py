@@ -64,8 +64,30 @@ class TripleTown(object):
         0: 0,
         1: 10,
         2: 40,
+        3: 0, #TODO
+        4: 0, #TODO
         5: 3000,
+        6: 0, #TODO
+        7: 0, #TODO
+        8: 0, #TODO
+        9: 0, #TODO
+        10: 0, #TODO
+        11: 0, #TODO
+        12: 0, #TODO
         13: 80,
+        14: 0, #TODO
+        15: 0, #TODO
+        16: 0, #TODO
+        17: 0, #TODO
+        18: 0, #TODO
+        19: 0, #TODO
+        20: 0, #TODO
+        21: 0, #TODO
+        40: 0, #TODO
+        41: 0, #TODO
+        50: 0, #TODO
+        51: 0, #TODO
+        52: 0, #TODO
         # Church: -1500 (maybe church+?)
     }
 
@@ -412,18 +434,25 @@ class TripleTown(object):
         group = self.find_group(x, y, set())
         update_type = self.get(x, y)
 
-        if len(group) >= 3:
+        try:
+            if len(group) >= 3:
             # We have a match! Erase the group and place the upgrade at
             # the current location.
 
             # First, groups that don't upgrade.
-            upgrade = self.get_item_upgrade(update_type, len(group))
-            if upgrade:
-                for node in group:
-                    self.place(node[0], node[1], None)
-                self.place(x, y, upgrade)
-                self.score += self.item_scores[upgrade]
-                loop = True
+                upgrade = self.get_item_upgrade(update_type, len(group))
+                if upgrade:
+                    for node in group:
+                        self.place(node[0], node[1], None)
+                    self.place(x, y, upgrade)
+                    self.score += self.item_scores[upgrade]
+                    loop = True
+
+        except TypeError:
+            print group
+            print x, y
+            print self.get(x, y)
+            self.status()
 
         if loop:
             self.update_board(x, y)
